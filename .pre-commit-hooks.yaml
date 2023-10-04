@@ -1,0 +1,6 @@
+- id: goimports-reviser
+  name: goimports-reviser
+  description: "Orders go imports"
+  entry: goimports-reviser
+  language: golang
+  types: [ go ]
