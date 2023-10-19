@@ -113,7 +113,9 @@ func init() {
 std - std import group; 
 general - libs for general purpose; 
 company - inter-org or your company libs(if you set '-company-prefixes'-option, then 4th group will be split separately. In other case, it will be the part of general purpose libs); 
-project - your local project dependencies. 
+project - your local project dependencies;
+blanked - imports with "_" alias;
+dotted - imports with "." alias.
 Optional parameter.`,
 	)
 
@@ -274,9 +276,11 @@ func main() {
 		return
 	}
 
-	originPath, err = filepath.Abs(originPath)
-	if err != nil {
-		log.Fatalf("Failed to get abs path: %+v\n", err)
+	if originPath != reviser.StandardInput {
+		originPath, err = filepath.Abs(originPath)
+		if err != nil {
+			log.Fatalf("Failed to get abs path: %+v\n", err)
+		}
 	}
 
 	var formattedOutput []byte
@@ -319,7 +323,9 @@ func main() {
 			}
 		}
 		file, _ := os.OpenFile(cacheFile, os.O_RDWR, os.ModePerm)
-		defer file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 		if err = file.Truncate(0); err != nil {
 			log.Fatalf("Failed file truncate: %+v\n", err)
 		}
@@ -377,7 +383,7 @@ func validateRequiredParam(filePath string) error {
 		stat, _ := os.Stdin.Stat()
 		if stat.Mode()&os.ModeNamedPipe == 0 {
 			// no data on stdin
-			return fmt.Errorf("-%s should be set", filePathArg)
+			return fmt.Errorf("no data on stdin")
 		}
 	}
 	return nil
