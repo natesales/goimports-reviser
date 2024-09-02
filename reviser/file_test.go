@@ -270,7 +270,27 @@ import (
 			wantChange: true,
 			wantErr:    false,
 		},
+		{
+			name: "success with single std deps only",
+			args: args{
+				projectName: "github.com/incu6us/goimports-reviser",
+				filePath:    "./testdata/example.go",
+				fileContent: `package testdata
 
+import "log"
+
+// nolint:gomnd
+`,
+			},
+			want: `package testdata
+
+import "log"
+
+// nolint:gomnd
+`,
+			wantChange: false,
+			wantErr:    false,
+		},
 		{
 			name: "success with third-party deps only",
 			args: args{
@@ -295,6 +315,27 @@ import (
 // nolint:gomnd
 `,
 			wantChange: true,
+			wantErr:    false,
+		},
+		{
+			name: "success with single third-party deps",
+			args: args{
+				projectName: "github.com/incu6us/goimports-reviser",
+				filePath:    "./testdata/example.go",
+				fileContent: `package testdata
+
+import "golang.org/x/exp/slices"
+
+// nolint:gomnd
+`,
+			},
+			want: `package testdata
+
+import "golang.org/x/exp/slices"
+
+// nolint:gomnd
+`,
+			wantChange: false,
 			wantErr:    false,
 		},
 
@@ -515,6 +556,33 @@ import (
 			wantErr:    false,
 		},
 		{
+			name: "preserves cgo import with single std deps",
+			args: args{
+				projectName: "github.com/incu6us/goimports-reviser",
+				filePath:    "./testdata/cgo_example.go",
+				fileContent: `package testdata
+
+/*
+#include <stdlib.h>
+*/
+import "C"
+
+import "errors"
+`,
+			},
+			want: `package testdata
+
+/*
+#include <stdlib.h>
+*/
+import "C"
+
+import "errors"
+`,
+			wantChange: false,
+			wantErr:    false,
+		},
+		{
 			name: "preserves cgo import even when reordering",
 			args: args{
 				projectName: "github.com/incu6us/goimports-reviser",
@@ -574,7 +642,7 @@ import "C"
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix()
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix()
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -767,7 +835,7 @@ import (
 		t.Run(tt.name, func(t *testing.T) {
 			order, err := StringToImportsOrders(tt.args.importsOrder)
 			assert.Nil(t, err)
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
 				Fix(WithImportsOrder(order))
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -1090,7 +1158,7 @@ func main() {
 		require.NoError(t, os.WriteFile(tt.args.filePath, []byte(tt.args.fileContent), 0o644))
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
 				Fix(WithRemovingUnusedImports)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -1239,7 +1307,7 @@ func main() {
 		require.NoError(t, os.WriteFile(tt.args.filePath, []byte(tt.args.fileContent), 0o644))
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
 				Fix(WithUsingAliasForVersionSuffix)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -1454,7 +1522,7 @@ func main() {
 		require.NoError(t, os.WriteFile(tt.args.filePath, []byte(tt.args.fileContent), 0o644))
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).
 				Fix(WithCompanyPackagePrefixes(tt.args.localPkgPrefixes))
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -1543,7 +1611,7 @@ func test1() {}
 		require.NoError(t, os.WriteFile(tt.args.filePath, []byte(tt.args.fileContent), 0o644))
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix(WithCodeFormatting)
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix(WithCodeFormatting)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -1919,7 +1987,7 @@ import (
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix(WithSkipGeneratedFile)
+			got, _, hasChange, err := NewSourceFile(tt.args.projectName, tt.args.filePath).Fix(WithSkipGeneratedFile)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

@@ -1,4 +1,4 @@
-goimports reviser linter
+goimports-reviser analyzer
 ---
 
 ### Build
